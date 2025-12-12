@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: qa-tracker-db
+    environment:
+      POSTGRES_USER: qatracker
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securepassword}
+      POSTGRES_DB: qa_tracker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - qa-network
+
+  # Backend API
+  api:
+    build: ./server
+    container_name: qa-tracker-api
+    environment:
+      DATABASE_URL: postgresql://qatracker:${DB_PASSWORD:-securepassword}@db:5432/qa_tracker
+      PORT: 3001
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - qa-network
+    ports:
+      - "3001:3001"
+
+  # Frontend
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: ${API_URL:-http://localhost:3001/api}
+    container_name: qa-tracker-client
+    restart: unless-stopped
+    networks:
+      - qa-network
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+
+networks:
+  qa-network:
+    driver: bridge
