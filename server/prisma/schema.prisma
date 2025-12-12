@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id              String   @id @default(uuid())
+  userId          String   // mocked for now
+  organizationId  String   // mocked for now
+  roleType        String   // Junior QA, Manual QA, etc.
+  company         String
+  jobTitle        String
+  location        String?
+  source          String?
+  status          String   @default("Applied")
+  appliedDate     DateTime @default(now())
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String   @default("USD")
+  priority        String   @default("Medium")
+  
+  // Contact Info
+  contactName     String?
+  contactEmail    String?
+  contactPhone    String?
+
+  // Role specific fields stored as JSON
+  requiredFields  String   @default("{}") // Storing as JSON string for SQLite simplicity (Prisma supports Json on Postgres but SQLite is limited without extensions, string is safest for broad compat in this scaffold)
+  
+  notes           Note[]
+  interviews      Interview[]
+  attachments     Attachment[]
+  
+  tags            String   @default("") // Comma separated for SQLite
+  activityLog     String   @default("[]") // JSON string
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Note {
+  id            String      @id @default(uuid())
+  text          String
+  authorId      String
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+}
+
+model Interview {
+  id            String      @id @default(uuid())
+  type          String
+  date          DateTime
+  mode          String
+  status        String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+}
+
+model Attachment {
+  id            String      @id @default(uuid())
+  filename      String
+  url           String
+  uploadedAt    DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String
+}
